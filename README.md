@@ -84,10 +84,16 @@ The plugin works out of the box with default settings. Currently, no additional 
 
 When editing files over SSH, Neovim runs on the remote server while your keyboard input is handled by your local computer's IME. To automatically switch your local IME from remote Neovim:
 
-1. **On your local Windows machine**, start the lightweight daemon:
-   ```powershell
-   powershell -ExecutionPolicy Bypass -File .\scripts\auto-ime-daemon.ps1
-   ```
+1. **Start the lightweight daemon on your local computer**:
+   - **macOS / Linux**:
+     ```bash
+     ./scripts/auto-ime-daemon.sh
+     ```
+     *(On macOS, `macism` is used: `brew install macism`)*
+   - **Windows**:
+     ```powershell
+     powershell -ExecutionPolicy Bypass -File .\scripts\auto-ime-daemon.ps1
+     ```
 2. **Connect to your remote server** with reverse port forwarding:
    ```bash
    ssh -R 8989:127.0.0.1:8989 user@remote-server
