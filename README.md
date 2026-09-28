@@ -72,12 +72,34 @@ The plugin works out of the box with default settings. Currently, no additional 
 
 ## Supported Platforms
 
-| Platform | Input Method Tools Supported |
-| -------- | ---------------------------- |
-| Windows  | Native IME API               |
-| WSL      | Native (Built-in PowerShell) |
-| Linux    | fcitx5-remote, ibus          |
-| macOS    | macism                       |
+| Platform | Input Method Tools Supported  |
+| -------- | ----------------------------- |
+| Windows  | Native IME API                |
+| WSL      | Native (Built-in PowerShell)  |
+| SSH      | Reverse tunnel + local daemon |
+| Linux    | fcitx5-remote, ibus           |
+| macOS    | macism                        |
+
+## Remote SSH Usage
+
+When editing files over SSH, Neovim runs on the remote server while your keyboard input is handled by your local computer's IME. To automatically switch your local IME from remote Neovim:
+
+1. **On your local Windows machine**, start the lightweight daemon:
+   ```powershell
+   powershell -ExecutionPolicy Bypass -File .\scripts\auto-ime-daemon.ps1
+   ```
+2. **Connect to your remote server** with reverse port forwarding:
+   ```bash
+   ssh -R 8989:127.0.0.1:8989 user@remote-server
+   ```
+3. Remote Neovim detects the SSH session and signals your local machine asynchronously via libuv TCP (zero lag).
+
+To customize the port (default `8989`) in remote Neovim:
+```lua
+require("auto-ime").setup({
+  ssh_port = 8989,
+})
+```
 
 ## How It Works
 

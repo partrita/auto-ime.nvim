@@ -1,6 +1,7 @@
 local M = {}
 
-function M.detect()
+function M.detect(opts)
+  opts = opts or {}
 
   local uv = vim.uv or vim.loop
   local sys = uv and uv.os_uname().sysname or ""
@@ -74,6 +75,38 @@ function M.detect()
       if conv_mode ~= 0 then
         user32.SendMessageA(ime_hwnd, WM_IME_CONTROL, IMC_SETCONVERSIONMODE, 0)
       end
+    end
+  end
+
+  ------------------------------------------------
+  -- SSH Remote Session
+  ------------------------------------------------
+  local is_ssh = vim.env.SSH_CLIENT ~= nil or vim.env.SSH_CONNECTION ~= nil or vim.env.SSH_TTY ~= nil
+
+  if is_ssh then
+    if opts.ssh_command then
+      local cmd = opts.ssh_command
+      return function()
+        vim.fn.system(cmd)
+      end
+    end
+
+    local ssh_port = opts.ssh_port or 8989
+
+    return function()
+      if not uv then return end
+      local client = uv.new_tcp()
+      if not client then return end
+
+      client:connect("127.0.0.1", ssh_port, function(err)
+        if err then
+          pcall(client.close, client)
+          return
+        end
+        client:write("GET / HTTP/1.0\r\n\r\n", function()
+          pcall(client.close, client)
+        end)
+      end)
     end
   end
 
