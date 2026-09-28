@@ -44,8 +44,8 @@ try {
 }
 
 Write-Host "==========================================================" -ForegroundColor Cyan
-Write-Host " [auto-ime] SSH Bridge Daemon running on 127.0.0.1:$Port" -ForegroundColor Green
-Write-Host " Connect with: ssh -R $Port:127.0.0.1:$Port user@remote" -ForegroundColor Yellow
+Write-Host " [auto-ime] SSH Bridge Daemon running on 127.0.0.1:${Port}" -ForegroundColor Green
+Write-Host " Connect with: ssh -R ${Port}:127.0.0.1:${Port} user@remote" -ForegroundColor Yellow
 Write-Host " Waiting for signals from remote Neovim... (Ctrl+C to stop)" -ForegroundColor Gray
 Write-Host "==========================================================" -ForegroundColor Cyan
 

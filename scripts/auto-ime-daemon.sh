@@ -42,7 +42,7 @@ fi
 
 echo "=========================================================="
 echo " [auto-ime] $OS SSH Bridge Daemon running on 127.0.0.1:$PORT"
-echo " Connect with: ssh -R $PORT:127.0.0.1:$PORT user@remote"
+echo " Connect with: ssh -R ${PORT}:127.0.0.1:${PORT} user@remote"
 echo " Trigger command: $IME_CMD"
 echo " Waiting for signals from remote Neovim... (Ctrl+C to stop)"
 echo "=========================================================="
