@@ -14,6 +14,7 @@
 
 PORT="${1:-8989}"
 OS="$(uname -s)"
+trap "echo -e '\nDaemon stopped.'; exit 0" SIGINT SIGTERM
 
 # Determine the local IME switch command
 IME_CMD=""
@@ -58,10 +59,14 @@ server = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
 server.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
 server.bind(('127.0.0.1', port))
 server.listen(10)
+server.settimeout(0.5)
 
 try:
     while True:
-        client, addr = server.accept()
+        try:
+            client, addr = server.accept()
+        except socket.timeout:
+            continue
         now = datetime.datetime.now().strftime('%H:%M:%S.%f')[:-3]
         subprocess.run(ime_cmd, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
         print(f'[{now}] Signal received! Switched local IME to Latin')
@@ -70,7 +75,7 @@ try:
         except Exception:
             pass
         client.close()
-except KeyboardInterrupt:
+except (KeyboardInterrupt, SystemExit):
     pass
 finally:
     server.close()

@@ -51,6 +51,9 @@ Write-Host "==========================================================" -Foregro
 
 try {
     while ($true) {
+        while (-not $listener.Pending()) {
+            Start-Sleep -Milliseconds 100
+        }
         $client = $listener.AcceptTcpClient()
         $stream = $client.GetStream()
         
@@ -70,4 +73,5 @@ try {
     }
 } finally {
     $listener.Stop()
+    Write-Host "`nDaemon stopped." -ForegroundColor Yellow
 }
