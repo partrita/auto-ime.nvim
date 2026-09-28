@@ -15,17 +15,6 @@ param(
     [int]$Port = 8989
 )
 
-$prefix = "http://127.0.0.1:$Port/"
-$listener = New-Object System.Net.HttpListener
-$listener.Prefixes.Add($prefix)
-
-try {
-    $listener.Start()
-} catch {
-    Write-Error "Failed to start listener on $prefix : $_"
-    exit 1
-}
-
 Add-Type @"
 using System;
 using System.Runtime.InteropServices;
@@ -34,31 +23,51 @@ public class WinIME {
     [DllImport("imm32.dll")] public static extern IntPtr ImmGetDefaultIMEWnd(IntPtr hWnd);
     [DllImport("user32.dll")] public static extern IntPtr SendMessageA(IntPtr hWnd, uint Msg, IntPtr wParam, IntPtr lParam);
 
-    public static void ToLatin() {
+    public static int ToLatin() {
         IntPtr fg = GetForegroundWindow();
-        if (fg == IntPtr.Zero) return;
+        if (fg == IntPtr.Zero) return -1;
         IntPtr ime = ImmGetDefaultIMEWnd(fg);
-        if (ime == IntPtr.Zero) return;
+        if (ime == IntPtr.Zero) return -2;
         SendMessageA(ime, 0x0283, (IntPtr)0x0006, IntPtr.Zero);
         SendMessageA(ime, 0x0283, (IntPtr)0x0002, IntPtr.Zero);
+        return 0;
     }
 }
 "@
 
+$listener = New-Object System.Net.Sockets.TcpListener([System.Net.IPAddress]::Loopback, $Port)
+try {
+    $listener.Start()
+} catch {
+    Write-Host "Failed to bind to port $Port. It may already be in use: $_" -ForegroundColor Red
+    exit 1
+}
+
 Write-Host "==========================================================" -ForegroundColor Cyan
-Write-Host " auto-ime SSH Bridge Daemon running on $prefix" -ForegroundColor Green
-Write-Host " Forward with: ssh -R $Port:127.0.0.1:$Port user@remote" -ForegroundColor Yellow
-Write-Host " Press Ctrl+C to stop" -ForegroundColor Gray
+Write-Host " [auto-ime] SSH Bridge Daemon running on 127.0.0.1:$Port" -ForegroundColor Green
+Write-Host " Connect with: ssh -R $Port:127.0.0.1:$Port user@remote" -ForegroundColor Yellow
+Write-Host " Waiting for signals from remote Neovim... (Ctrl+C to stop)" -ForegroundColor Gray
 Write-Host "==========================================================" -ForegroundColor Cyan
 
 try {
-    while ($listener.IsListening) {
-        $context = $listener.GetContext()
-        [WinIME]::ToLatin()
-        $context.Response.StatusCode = 200
-        $context.Response.Close()
+    while ($true) {
+        $client = $listener.AcceptTcpClient()
+        $stream = $client.GetStream()
+        
+        # Switch IME to Latin on local active window
+        $res = [WinIME]::ToLatin()
+        
+        $time = (Get-Date).ToString("HH:mm:ss.fff")
+        Write-Host "[$time] Signal received! Switched local IME to Latin (res=$res)" -ForegroundColor Green
+
+        # Send quick HTTP OK response in case remote uses HTTP/curl
+        try {
+            $responseBytes = [System.Text.Encoding]::ASCII.GetBytes("HTTP/1.0 200 OK`r`nContent-Length: 2`r`n`r`nOK")
+            $stream.Write($responseBytes, 0, $responseBytes.Length)
+        } catch { }
+
+        $client.Close()
     }
 } finally {
     $listener.Stop()
-    $listener.Close()
 }

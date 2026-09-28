@@ -81,7 +81,10 @@ function M.detect(opts)
   ------------------------------------------------
   -- SSH Remote Session
   ------------------------------------------------
-  local is_ssh = vim.env.SSH_CLIENT ~= nil or vim.env.SSH_CONNECTION ~= nil or vim.env.SSH_TTY ~= nil
+  local is_ssh = (opts and opts.ssh_port ~= nil)
+    or vim.env.SSH_CLIENT ~= nil
+    or vim.env.SSH_CONNECTION ~= nil
+    or vim.env.SSH_TTY ~= nil
 
   if is_ssh then
     if opts.ssh_command then
